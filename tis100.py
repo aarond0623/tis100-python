@@ -1,17 +1,30 @@
 import click
 
 class Node:
-    def __init__(self, code):
+    def __init__(self, x, y, code):
+        self.x = x
+        self.y = y
         self.code = code.split("\n")
         self.acc = 0
         self.bak = 0
-        self.dir = ['N/A', 'RIGHT', 'UP', 'LEFT', 'DOWN']
-        self.last = self.dir[0]
+        self.dir = ['RIGHT', 'UP', 'LEFT', 'DOWN']
+        self.last = 'N/A'
         self.step = 1
         self.cycle = 0
         self.length = len(self.code)
         self.curline = self.cycle % self.length
         self.label = {}
+    
+    def self.add(value):
+        try:
+            self.acc = int(value)
+        except ValueError:
+            if self.value == 'ACC':
+                self.acc += self.acc
+                return
+            if self.value == 'NIL':
+                self.acc += 0
+              
     
     def parse_code(self, line)
         line = [x.upper for x in line.split(', ')]
