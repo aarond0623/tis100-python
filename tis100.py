@@ -17,6 +17,38 @@ class NodeCluster:
                 row.append(self.Node(self, x, y))
             self.nodes.append(row)
 
+    def __repr__(self):
+        rep = ""
+        for row in self.nodes:
+            for _ in range(self.width):
+                rep += "┌────────┐"
+            rep += "\n"
+            for node in row:
+                rep += f"│ACC: {node.acc:3}│"
+            rep += "\n"
+            for node in row:
+                rep += f"│BAK: {node.bak:3}│"
+            rep += "\n"
+            for node in row:
+                dirs = {
+                    'UP': 'UP',
+                    'DOWN': 'DWN',
+                    'LEFT': 'LFT',
+                    'RIGHT': 'RGT',
+                    None: 'N/A'
+                }
+                rep += f"│LST: {dirs[node.last]}│"
+            rep += "\n"
+            for node in row:
+                rep += f"│MOD:    │"
+            rep += "\n"
+            for _ in range(self.width):
+                rep += "└────────┘"
+            rep += "\n"
+        if rep[-1] == "\n":
+            return rep[:-1]
+        return rep
+
     def run(self):
         for row in nodes:
             for node in row:
