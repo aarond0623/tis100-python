@@ -11,8 +11,9 @@ class Node:
         self.acc = 0
         self.bak = 0
         self.last = None
+        self.code = code
         self.instructions = []
-        self.parse_code(code)
+        self.parse_code()
         self.step = 0
         self.cycle = 0
         self.mode = 'IDLE'
@@ -264,7 +265,8 @@ class Node:
                 new_code.append(line)
         return (labels, new_code)
 
-    def parse_code(self, code):
+    def parse_code(self):
+        code = self.code
         code = code.upper().split('\n')
         code = self.strip_comments(code)
         code = [line.strip() for line in code]
@@ -301,5 +303,5 @@ class Node:
             elif line[0] == 'HCF':
                 instructions.append(self.hcf)
             else:
-                instructions.append(self.nop)
+                raise Exception(f"Unknown command: {line[0]}")
         self.instructions = instructions
