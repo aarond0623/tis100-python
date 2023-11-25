@@ -1,5 +1,6 @@
 import cluster
 import node
+import os
 import re
 
 def check_numeric(command, arguments, min_arguments, min_value=0, max_value=None):
@@ -15,11 +16,14 @@ def check_numeric(command, arguments, min_arguments, min_value=0, max_value=None
         variables = [variables[i%3] for i in range(min_arguments)]
         print(f"INVALID SYNTAX: {command} {' '.join(variables)}")
     else:
+        if len(int_arguments) == 0:
+            return None
         if len(int_arguments) == 1:
             return int_arguments[0]
         return tuple(int_arguments)
 
 def prompt():
+    _ = os.system('cls' if os.name == 'nt' else 'clear')
     print("TESSELLATED INTELLIGENCE SYSTEMS TIS-100 BIOS V1.2")
     print("COPYRIGHT (C) 1972-1975, TESSELLATED INTELLIGENCE SYSTEMS INC.")
     print()
@@ -31,7 +35,7 @@ def prompt():
                 width, height = check_numeric('INIT', cmd[1:], 2, 1)
             except TypeError:
                 continue
-            c = cluster.NodeCluster(width, height)
+            c = cluster.NodeCluster(width, height, speed=0)
             current_node = c.nodes[1][1]
             current_code = {}
         elif cmd[0] in ['MEM', 'NODE', 'OUTPUT', 'INPUT', 'LIST', 'DELETE',
@@ -112,7 +116,7 @@ def prompt():
                 continue
             inputs = []
             while True:
-                current_input = input(">>")
+                current_input = input(">> ")
                 if current_input == "":
                     break
                 try:
@@ -138,13 +142,15 @@ def prompt():
                 if i in current_code:
                     del current_code[i]
         if cmd[0] == 'AUTO':
-            try:
-                skip = check_numeric('AUTO', cmd[1:], 1)
-            except TypeError:
+            skip = check_numeric('AUTO', cmd[1:], 0)
+            if skip is None:
                 skip = 10
-            current_line = sorted(current_code.keys())[-1]
-            current_line = (current_line // skip) * skip
-            current_line += skip
+            try:
+                current_line = sorted(current_code.keys())[-1]
+                current_line = (current_line // skip) * skip
+                current_line += skip
+            except:
+                current_line = skip
             while True:
                 code = input(f"{current_line}: ")
                 if code == "":
@@ -157,17 +163,17 @@ def prompt():
                 try:
                     current_node.parse_code()
                 except Exception:
-                    print(f"INVALID COMMAND: {' '.join(cmd[1:])}")
-                    del current_code[int(cmd[0])]
+                    print(f"INVALID COMMAND: {' '.current_code[current_line]}")
+                    del current_code[current_line]
                     for i in sorted(current_code.keys()):
                         current_node.code += current_code[i]
                         current_node.code += "\n"
                     current_node.parse_code()
                     continue
+                current_line += skip
         if cmd[0] == 'RENUM':
-            try:
-                skip = check_numeric('RENUM', cmd[1:], 1)
-            except TypeError:
+            skip = check_numeric('RENUM', cmd[1:], 0)
+            if skip is None:
                 skip = 10
             new_code = {}
             current_line = skip

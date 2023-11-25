@@ -33,9 +33,34 @@ class Node:
         self.memory = memory
         self.stack = []
 
+    def __repr__(self):
+        # Alternative names for nodes or modes for printing.
+        alt_print = {'RIGHT': 'RGHT', None: 'N/A'}
+        rep = "┌─────────┐\n"
+        if self.memory:
+            for i in range(5):
+                rep += f"│{self.get_stack(i):>4} {self.get_stack(i+5):>4}│\n"
+        else:
+            rep += f"│ACC: {self.acc:>4}│\n"
+            rep += f"│BAK: {self.bak:>4}│\n"
+            rep += f"│LST: {alt_print.get(self.last, self.last):>4}│\n"
+            rep += f"│MOD: {alt_print.get(self.mode, self.mode):>4}│\n"
+            try:
+                idle = 100 - round((self.cycle * 100) / self.cluster.cycle)
+            except ZeroDivisionError:
+                idle = 0
+            rep += f"│IDL: {idle:>3}%│\n"
+        if self.cluster.debug:
+            rep += f"│OUT: {self.output:>4}│\n"
+            rep += f"|WRT: {alt_print.get(self.write, self.write):>4}│\n"
+            rep += f"│ IN: {self.input:>4}│\n"
+            rep += f"| RD: {alt_print.get(self.read, self.read):>4}│\n"
+        rep += "└─────────┘"
+        return rep
+
     def get_stack(self, i):
         if i >= len(self.stack):
-            return "N/A"
+            return None
         else:
             return self.stack[-i - 1]
 

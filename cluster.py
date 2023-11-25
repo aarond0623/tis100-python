@@ -6,7 +6,7 @@ class NodeCluster:
     """ Class for the cluster of notes in the TIS-100, to allow the individual
     nodes to communicate with each other.
     """
-    def __init__(self, width, height, inputs={}, outputs=[], speed=50, memory=[]):
+    def __init__(self, width, height, inputs={}, outputs=[], speed=50, memory=[], debug=False):
         self.width = width
         self.height = height
         # Inputs and outputs will be dictionaries of (x, y): [values]
@@ -17,6 +17,7 @@ class NodeCluster:
             self.output_lists[(x, y)] = []
         self.speed = speed
         self.memory = memory
+        self.debug = debug
         self.cycle = 0
         self.nodes = []
         self.go = True
@@ -34,61 +35,12 @@ class NodeCluster:
 
     def __repr__(self):
         rep = ""
-        for i in range(1, self.height+1):
-            for _ in range(1, self.width+1):
-                rep += "┌─────────┐"
-            rep += "\n"
-            for node in self.nodes[i][1:-1]:
-                if node.memory:
-                    rep += f"│{node.get_stack(0):>4} {node.get_stack(5):>4}│"
-                else:
-                    rep += f"│ACC: {node.acc:>4}│"
-            rep += "\n"
-            for node in self.nodes[i][1:-1]:
-                if node.memory:
-                    rep += f"│{node.get_stack(1):>4} {node.get_stack(6):>4}│"
-                else:
-                    rep += f"│BAK: {node.bak:>4}│"
-            rep += "\n"
-            for node in self.nodes[i][1:-1]:
-                dirs = {
-                    'UP': '  UP',
-                    'DOWN': 'DOWN',
-                    'LEFT': 'LEFT',
-                    'RIGHT': 'RGHT',
-                    'ANY': ' ANY',
-                    None: ' N/A'
-                }
-                modes = {
-                    'IDLE': 'IDLE',
-                    'READ': 'READ',
-                    'WRTE': 'WRTE',
-                    'RUN': ' RUN'
-                }
-                if node.memory:
-                    rep += f"│{node.get_stack(2):>4} {node.get_stack(7):>4}│"
-                else:
-                    rep += f"│LST: {dirs[node.last]}│"
-            rep += "\n"
-            for node in self.nodes[i][1:-1]:
-                if node.memory:
-                    rep += f"│{node.get_stack(3):>4} {node.get_stack(8):>4}│"
-                else:
-                    rep += f"│MOD: {modes[node.mode]}│"
-            rep += "\n"
-            for node in self.nodes[i][1:-1]:
-                if self.cycle == 0:
-                    idle = 0
-                else:
-                    idle = 100 - round((node.cycle * 100) / self.cycle)
-                if node.memory:
-                    rep += f"│{node.get_stack(4):>4} {node.get_stack(9):>4}│"
-                else:
-                    rep += f"│IDL: {idle:>3}%│"
-            rep += "\n"
-        for _ in range(1, self.width+1):
-            rep += "└─────────┘"
-        rep += "\n"
+        lines = len(self.nodes[1][1].__repr__().split('\n'))
+        for y in range(1, self.height+1):
+            for i in range(lines):
+                for x in range(1, self.width+1):
+                    rep += self.nodes[y][x].__repr__().split('\n')[i]
+                rep += "\n"
         for x, y in self.outputs:
             output_list = [str(x) for x in self.output_lists[(x, y)]]
             rep += f"({x}, {y}): {', '.join(output_list)}\n"
