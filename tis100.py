@@ -48,7 +48,7 @@ def prompt():
                 width, height = check_numeric('INIT', cmd[1:], 2, 1)
             except TypeError:
                 continue
-            c = cluster.NodeCluster(width, height, debug=True)
+            c = cluster.NodeCluster(width, height)
             current_node = c.nodes[1][1]
             current_code = {}
             all_code = {}
