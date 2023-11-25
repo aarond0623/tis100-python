@@ -84,11 +84,14 @@ class NodeCluster:
                     if (x, y) in self.dead or (x, y) in self.memory:
                         continue
                     file.write(f"@{i}\n")
-                    file.write(self.nodes[y][x].code)
-                    if self.nodes[y][x].code[-1] == "\n":
-                        file.write("\n")
-                    else:
+                    if self.nodes[y][x].code == "":
                         file.write("\n\n")
+                    else:
+                        file.write(self.nodes[y][x].code)
+                        if self.nodes[y][x].code[-1] == "\n":
+                            file.write("\n")
+                        else:
+                            file.write("\n\n")
                     i += 1
 
     def create_input(self, x, y):

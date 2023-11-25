@@ -222,7 +222,7 @@ def prompt():
             except IndexError:
                 max_chars = 1
             for i in sorted(current_code.keys()):
-                print(f"{i:>max_chars}: {current_code[i]}")
+                print(f"{i:>{max_chars}}: {current_code[i]}")
 
         if cmd[0] == 'DELETE':
             try:
@@ -257,9 +257,11 @@ def prompt():
                     current_node.code += "\n"
                 try:
                     current_node.parse_code()
+                    all_code[(current_node.x, current_node.y)] = current_code
                 except Exception:
-                    print(f"INVALID COMMAND: {' '.current_code[current_line]}")
+                    print(f"INVALID COMMAND: {current_code[current_line]}")
                     del current_code[current_line]
+                    current_node.code = ""
                     for i in sorted(current_code.keys()):
                         current_node.code += current_code[i]
                         current_node.code += "\n"
