@@ -4,7 +4,7 @@ MAX_N = 999
 MIN_N = -999
 
 class Node:
-    def __init__(self, cluster, x, y, code="", memory=False):
+    def __init__(self, cluster, x, y, code="", memory=False, dead=False):
         self.x = x
         self.y = y
         self.cluster = cluster
@@ -28,6 +28,8 @@ class Node:
         # distance in the cluster.
         self.ready_to_write = False
 
+        self.dead = dead
+
         # For stack memory nodes.
         self.memory = memory
         self.stack = []
@@ -39,6 +41,12 @@ class Node:
         if self.memory:
             for i in range(5):
                 rep += f"│{self.get_stack(i):>4} {self.get_stack(i+5):>4}│\n"
+        elif self.dead:
+            rep += "│         │\n"\
+                   "│ ▄▄▄▄▄▄▄ │\n"\
+                   "│ BLOCKED │\n"\
+                   "│ ▀▀▀▀▀▀▀ │\n"\
+                   "│         │\n"
         else:
             rep += f"│ACC: {alt_print.get(self.acc, self.acc):>4}│\n"
             rep += f"│BAK: {self.bak:>4}│\n"
