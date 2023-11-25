@@ -40,6 +40,8 @@ class NodeCluster:
                 if (x, y) in self.outputs:
                     row[x].acc = None
             self.nodes.append(row)
+        if filename:
+            self.load(filename)
 
     def __repr__(self):
         rep = ""
@@ -67,7 +69,6 @@ class NodeCluster:
                     code[current_node] = ""
                 elif line != "":
                     code[current_node] += line
-                    code[current_node] += "\n"
         i = 0
         for y in range(1, self.height+1):
             for x in range(1, self.width+1):
