@@ -19,15 +19,14 @@ class Node:
         self.mode = 'IDLE'
         # Output register. Outgoing values are stored here.
         self.output = None
-
-        # Input register. Incoming values are stored here.
-        self.input = None
-
         # The register this node is writing to.
         self.write = None
-
-        # The register this node is reading from.
-        self.read = None
+        # Whether or not this node is ready to write. Nodes take two cycles to
+        # be ready to write to another node. First, output and write direction
+        # are set. Then at the end of the cycle, the node is marked ready to
+        # write by the cluster. This prevents values from jumping a vast
+        # distance in the cluster.
+        self.ready_to_write = False
 
         # For stack memory nodes.
         self.memory = memory
@@ -41,7 +40,7 @@ class Node:
             for i in range(5):
                 rep += f"│{self.get_stack(i):>4} {self.get_stack(i+5):>4}│\n"
         else:
-            rep += f"│ACC: {self.acc:>4}│\n"
+            rep += f"│ACC: {alt_print.get(self.acc, self.acc):>4}│\n"
             rep += f"│BAK: {self.bak:>4}│\n"
             rep += f"│LST: {alt_print.get(self.last, self.last):>4}│\n"
             rep += f"│MOD: {alt_print.get(self.mode, self.mode):>4}│\n"
@@ -52,9 +51,8 @@ class Node:
             rep += f"│IDL: {idle:>3}%│\n"
         if self.cluster.debug:
             rep += f"│{alt_print.get(self.write, self.write):>4}"
-            rep += f" {alt_print.get(self.read, self.read):>4}│\n"
-            rep += f"│{alt_print.get(self.output, self.output):>4}"
-            rep += f" {alt_print.get(self.input, self.input):>4}│\n"
+            rep += f" {alt_print.get(self.output, self.output):>4}│\n"
+            rep += f"│{self.step:>4} {self.cycle:>4}│\n"
         rep += "└─────────┘"
         return rep
 
@@ -76,23 +74,46 @@ class Node:
             if src == 'NIL':
                 self.mode = 'RUN'
                 return 0
-            # On TIS-100, reading a value from LAST when it is not set returns
-            # 0.
+            # Otherwise, we're reading from a port.
+            self.mode = 'READ'
+            # On TIS-100, an unset LAST returns 0.
             if src == 'LAST':
                 if self.last is None:
-                    self.mode = 'RUN'
                     return 0
                 else:
                     src = self.last
-            # Otherwise, we are expecting or will expect a value.
-            if src in ['UP', 'DOWN', 'LEFT', 'RIGHT', 'ANY']:
-                self.mode = 'READ'
-                # When input is set, we just had a move. Return that and clear.
+            # When reading from ANY, this is the precedence for ports.
+            if src == 'ANY':
+                src = ('LEFT', 'RIGHT', 'UP', 'DOWN')
+            else:
+                src = (src, )
+            dirs = {
+                'UP': (0, -1),
+                'DOWN': (0, 1),
+                'LEFT': (-1, 0),
+                'RIGHT': (1, 0)
+            }
+            rdirs = {
+                'UP': 'DOWN',
+                'DOWN': 'UP',
+                'LEFT': 'RIGHT',
+                'RIGHT': 'LEFT'
+            }
+            for port in src:
                 value = None
-                if self.input:
-                    value = self.input
-                    self.input = None
-                self.read = src
+                x, y = dirs[port]
+                x += self.x
+                y += self.y
+                out_node = self.cluster.nodes[y][x]
+                if (out_node.ready_to_write and
+                        (out_node.write == rdirs[port] or
+                        out_node.write == 'ANY')):
+                    value = out_node.output
+                    # Set these to None, but don't touch ready_to_write; only
+                    # the cluster controls that.
+                    out_node.write = None
+                    out_node.output = None
+                    return value
                 return value
             raise Exception(f"Invalid argument \"{value}\"")
 
@@ -110,15 +131,10 @@ class Node:
         # MOV - Move a value
         src = self.get_value(src)
         if src is None:
-            # Was not able to retrieve a value -- FAIL.
+            # Was not able to retrieve a value.
             return
         # Already writing: FAIL
-        if self.write and self.output:
-            return
-        # Just finished a move
-        if self.write and not self.output:
-            self.write = None
-            self.mode = 'RUN'
+        if self.ready_to_write:
             return
         if dest == 'ACC':
             self.mode = 'RUN'
@@ -143,6 +159,7 @@ class Node:
             self.mode = 'WRTE'
             self.write = dest
             self.output = src
+            self.cycle += 1
             return
 
 
@@ -249,22 +266,16 @@ class Node:
 
     def exe(self):
         if self.memory:
-            if self.input:
-                self.stack.append(self.input)
-                self.input = None
-                self.read = None
-            else:
-                self.input = None
-                self.read = 'ANY'
+            # For stack memory, always be trying to get a value.
+            value = self.get_value('ANY')
+            if value:
+                self.stack.append(value)
             if self.stack:
-                self.write = 'ANY'
-                if self.mode == 'WRTE':
+                if not self.ready_to_write:
+                    # Our output was read; pop off the stack.
                     self.stack.pop()
-                    self.mode = 'IDLE'
-                else:
-                    self.output = self.stack[-1]
-            else:
-                self.write = None
+                self.write = 'ANY'
+                self.output = self.get_stack(0)
         if len(self.instructions) == 0:
             return
         instruction = self.instructions[self.step % len(self.instructions)]

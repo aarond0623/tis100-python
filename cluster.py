@@ -27,18 +27,25 @@ class NodeCluster:
                 code = ""
                 if (x, y) in self.inputs:
                     code = self.create_input(x, y)
+                if (x, y) in self.outputs:
+                    code = self.create_output(x, y)
                 if (x, y) in self.memory:
                     row.append(node.Node(self, x, y, code=code, memory=True))
                 else:
                     row.append(node.Node(self, x, y, code=code))
+                if (x, y) in self.outputs:
+                    row[x].acc = None
             self.nodes.append(row)
 
     def __repr__(self):
         rep = ""
+        offset = 1
+        if self.debug:
+            offset = 0
         lines = len(self.nodes[1][1].__repr__().split('\n'))
-        for y in range(1, self.height+1):
+        for y in range(offset, self.height+2-offset):
             for i in range(lines):
-                for x in range(1, self.width+1):
+                for x in range(offset, self.width+2-offset):
                     rep += self.nodes[y][x].__repr__().split('\n')[i]
                 rep += "\n"
         for x, y in self.outputs:
@@ -59,6 +66,18 @@ class NodeCluster:
         for value in self.inputs[(x, y)]:
             code += f"MOV {value} {direction}\n"
         code += "JRO 0"
+        return code
+
+    def create_output(self, x, y):
+        if y == 0:
+            direction = 'DOWN'
+        elif y == (self.height + 1):
+            direction = 'UP'
+        elif x == 0:
+            direction = 'RIGHT'
+        elif x == (self.width + 1):
+            direction = 'LEFT'
+        code = f"MOV {direction} ACC"
         return code
 
     def run(self):
@@ -94,6 +113,11 @@ class NodeCluster:
         for row in self.nodes:
             for node in row:
                 node.exe()
+                # If this is an output node, check the ACC, add it to the
+                # output list, then clear it.
+                if (node.x, node.y) in self.outputs and node.acc:
+                    self.output_lists[(node.x, node.y)].append(node.acc)
+                    node.acc = None
         # Check any register values
         dirs = {
             'UP': (0, -1),
@@ -107,81 +131,14 @@ class NodeCluster:
             'LEFT': 'RIGHT',
             'RIGHT': 'LEFT'
         }
-        # Move any values
+        # Set nodes' ready_to_write value if they have a write port and output
+        # set.
         for row in self.nodes:
             for node in row:
-                if node.read == 'ANY':
-                    for direction in ['LEFT', 'RIGHT', 'UP', 'DOWN']:
-                        x, y = dirs[direction]
-                        x += node.x
-                        y += node.y
-                        if (rdirs[direction] == self.nodes[y][x].write and
-                            self.nodes[y][x].output):
-                            node.input = self.nodes[y][x].output
-                            node.read = None
-                            node.last = direction
-                            self.nodes[y][x].output = None
-                            self.nodes[y][x].step += 1
-                            self.nodes[y][x].cycle += 1
-                            break
-                        if ('ANY' == self.nodes[y][x].write and
-                            self.nodes[y][x].output):
-                            node.input = self.nodes[y][x].output
-                            node.read = None
-                            node.last = direction
-                            self.nodes[y][x].output = None
-                            self.nodes[y][x].last = rdirs[direction]
-                            self.nodes[y][x].step += 1
-                            self.nodes[y][x].cycle += 1
-                            if self.nodes[y][x].memory:
-                                self.nodes[y][x].mode = 'WRTE'
-                            break
-                elif node.read in ('UP', 'DOWN', 'LEFT', 'RIGHT'):
-                    x, y = dirs[node.read]
-                    x += node.x
-                    y += node.y
-                    if (rdirs[node.read] == self.nodes[y][x].write and
-                        self.nodes[y][x].output):
-                        node.input = self.nodes[y][x].output
-                        node.read = None
-                        self.nodes[y][x].output = None
-                        self.nodes[y][x].step += 1
-                        self.nodes[y][x].cycle += 1
-                    if ('ANY' == self.nodes[y][x].write and
-                        self.nodes[y][x].output):
-                        node.input = self.nodes[y][x].output
-                        self.nodes[y][x].last = rdirs[node.read]
-                        node.read = None
-                        self.nodes[y][x].output = None
-                        self.nodes[y][x].step += 1
-                        self.nodes[y][x].cycle += 1
-                        if self.nodes[y][x].memory:
-                            self.nodes[y][x].mode = 'WRTE'
-                elif (node.x, node.y) in self.outputs:
-                    if node.y == 0:
-                        direction = 'DOWN'
-                    elif node.y == (self.height + 1):
-                        direction = 'UP'
-                    elif node.x == 0:
-                        direction = 'RIGHT'
-                    elif node.x == (self.width + 1):
-                        direction = 'LEFT'
-                    x, y = dirs[direction]
-                    x += node.x
-                    y += node.y
-                    if (rdirs[direction] == self.nodes[y][x].write and
-                        self.nodes[y][x].output):
-                        self.output_lists[(node.x, node.y)].append(self.nodes[y][x].output)
-                        self.nodes[y][x].output = None
-                        self.nodes[y][x].step += 1
-                        self.nodes[y][x].cycle += 1
-                    if ('ANY' == self.nodes[y][x].write and
-                        self.nodes[y][x].output and
-                        not self.nodes[y][x].memory):
-                        self.output_lists[(node.x, node.y)].append(self.nodes[y][x].output)
-                        self.nodes[y][x].list = rdirs[direction]
-                        self.nodes[y][x].output = None
-                        self.nodes[y][x].step += 1
-                        self.nodes[y][x].cycle = 1
+                # Node just wrote somewhere, step and cycle increase by 1.
+                if node.ready_to_write and not(node.write and node.output):
+                    node.step += 1
+                    node.cycle += 1
+                node.ready_to_write = node.write and node.output
 
 
