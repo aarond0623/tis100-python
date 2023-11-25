@@ -48,13 +48,13 @@ def prompt():
                 width, height = check_numeric('INIT', cmd[1:], 2, 1)
             except TypeError:
                 continue
-            c = cluster.NodeCluster(width, height)
+            c = cluster.NodeCluster(width, height, debug=True)
             current_node = c.nodes[1][1]
             current_code = {}
             all_code = {}
             test_outputs = {}
         elif cmd[0] in ['MEM', 'DEAD', 'NODE', 'OUTPUT', 'INPUT', 'LIST', 'DELETE',
-            'AUTO', 'RENUM', 'RUN', 'LOAD', 'SAVE', 'TEST'] or cmd[0].isnumeric():
+            'AUTO', 'RENUM', 'RUN', 'STEP', 'LOAD', 'SAVE', 'TEST'] or cmd[0].isnumeric():
             try:
                 c
             except NameError:
@@ -301,9 +301,23 @@ def prompt():
             except FileNotFoundError:
                 print(f"FILE `{filename}' NOT FOUND")
                 continue
+            for row in c.nodes:
+                for n in row:
+                    i = 10
+                    all_code[(n.x, n.y)] = {}
+                    for line in n.code.split('\n'):
+                        all_code[n.x, n.y][i] = line
+                        i += 10
+            current_code = all_code[(current_node.x, current_node.y)]
 
         if cmd[0] == 'RUN':
             c.run()
+
+        if cmd[0] == 'STEP':
+            speed = c.speed
+            c.speed = 0
+            c.run()
+            c.speed = speed
 
         if cmd[0] == 'EXIT':
             break
