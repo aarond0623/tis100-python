@@ -137,12 +137,12 @@ class Node:
 
     def mov(self, src, dest):
         # MOV - Move a value
+        # Already writing: FAIL
+        if self.ready_to_write:
+            return
         src = self.get_value(src)
         if src is None:
             # Was not able to retrieve a value.
-            return
-        # Already writing: FAIL
-        if self.ready_to_write:
             return
         if dest == 'ACC':
             self.mode = 'RUN'
