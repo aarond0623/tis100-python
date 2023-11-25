@@ -51,10 +51,10 @@ class Node:
                 idle = 0
             rep += f"│IDL: {idle:>3}%│\n"
         if self.cluster.debug:
-            rep += f"│OUT: {self.output:>4}│\n"
-            rep += f"|WRT: {alt_print.get(self.write, self.write):>4}│\n"
-            rep += f"│ IN: {self.input:>4}│\n"
-            rep += f"| RD: {alt_print.get(self.read, self.read):>4}│\n"
+            rep += f"│{alt_print.get(self.write, self.write):>4}"
+            rep += f" {alt_print.get(self.read, self.read):>4}│\n"
+            rep += f"│{alt_print.get(self.output, self.output):>4}"
+            rep += f" {alt_print.get(self.input, self.input):>4}│\n"
         rep += "└─────────┘"
         return rep
 
