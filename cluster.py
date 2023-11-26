@@ -8,7 +8,7 @@ class NodeCluster:
     nodes to communicate with each other.
     """
     def __init__(self, width, height, inputs={}, outputs=[], image_port=None, image_dim=(30, 18), test_image=[], filename=None, test_outputs={}, speed=50, memory=[], dead=[], debug=False):
-        self.screen = curses.initscr()
+        self.screen = None
         self.width = width
         self.height = height
         # Inputs and outputs will be dictionaries of (x, y): [values]
@@ -179,6 +179,7 @@ class NodeCluster:
 
     def run(self):
         try:
+            self.screen = curses.initscr()
             curses.start_color()
             curses.use_default_colors()
             self.screen.clear()

@@ -54,7 +54,7 @@ def prompt():
             all_code = {}
             test_outputs = {}
         elif cmd[0] in ['MEM', 'DEAD', 'NODE', 'OUTPUT', 'INPUT', 'LIST', 'DELETE',
-            'AUTO', 'RENUM', 'RUN', 'STEP', 'LOAD', 'SAVE', 'TEST'] or cmd[0].isnumeric():
+            'AUTO', 'RENUM', 'RUN', 'STEP', 'FAST', 'LOAD', 'SAVE', 'TEST', 'IMAGE', 'IMAGE_TEST'] or cmd[0].isnumeric():
             try:
                 c
             except NameError:
@@ -148,6 +148,52 @@ def prompt():
             c.nodes[y][x].parse_code()
             c.nodes[y][x].acc = None
             c.output_lists[(x, y)] = []
+
+        if cmd[0] == 'IMAGE':
+            try:
+                x, y = check_numeric('IMAGE', cmd[1:], 2)
+            except TypeError:
+                continue
+            try:
+                assert (x, y) in c.outputs
+            except AssertionError:
+                print(f"{x}, {y} NOT AN OUTPUT")
+                continue
+            c.image_port = (x, y)
+            c.image = [[0] * c.image_dim[0] for _ in range(c.image_dim[1])]
+
+        if cmd[0] == 'IMAGE_TEST':
+            try:
+                x, y = check_numeric('IMAGE_TEST', cmd[1:], 2)
+            except TypeError:
+                continue
+            try:
+                assert (x, y) == c.image_port
+            except AssertionError:
+                print(f"{x}, {y} NOT AN IMAGE PORT")
+                continue
+            outputs = []
+            done = False
+            for y in range(c.image_dim[1]):
+                for x in range(c.image_dim[0]):
+                    current_input = input(">> ")
+                    if current_input == "":
+                        done = True
+                        break
+                    try:
+                        outputs.append(int(current_input))
+                    except ValueError:
+                        try:
+                            with open(current_input, 'r') as file:
+                                outputs = [[int(n) for n in line.strip()] for line in file.readlines() if line != ""]
+                                done = True
+                                break
+                        except (ValueError, FileNotFoundError):
+                            print("TEST OUTPUT MUST BE INTEGER")
+                            continue
+                if done:
+                    break
+            c.test_image = outputs
 
         if cmd[0] == 'INPUT':
             try:
@@ -316,6 +362,12 @@ def prompt():
         if cmd[0] == 'STEP':
             speed = c.speed
             c.speed = 0
+            c.run()
+            c.speed = speed
+
+        if cmd[0] == 'FAST':
+            speed = c.speed
+            c.speed = 5000
             c.run()
             c.speed = speed
 
