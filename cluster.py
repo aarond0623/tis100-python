@@ -48,6 +48,9 @@ class NodeCluster:
         offset = 1
         if self.debug:
             offset = 0
+            for x, y in self.inputs.keys():
+                input_list = [str(x) for x in self.inputs[(x, y)]]
+                rep += f"({x}, {y}): {', '.join(input_list)}\n"
         lines = len(self.nodes[1][1].__repr__().split('\n'))
         for y in range(offset, self.height+2-offset):
             for i in range(lines):
@@ -192,5 +195,3 @@ class NodeCluster:
                     n.step += 1
                     n.cycle += 1
                 n.ready_to_write = n.write and (n.output is not None)
-
-

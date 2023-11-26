@@ -60,7 +60,11 @@ class Node:
         if self.cluster.debug:
             rep += f"│{alt_print.get(self.write, self.write):>4}"
             rep += f" {alt_print.get(self.output, self.output):>4}│\n"
-            rep += f"│{self.step:>4} {self.cycle:>4}│\n"
+            if len(self.instructions) == 0:
+                step = 0
+            else:
+                step = self.step % len(self.instructions)
+            rep += f"│{step:>4} {self.cycle:>4}│\n"
         rep += "└─────────┘"
         return rep
 
