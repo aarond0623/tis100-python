@@ -167,7 +167,7 @@ class NodeCluster:
                 n.exe()
                 # If this is an output node, check the ACC, add it to the
                 # output list, then clear it.
-                if (n.x, n.y) in self.outputs and n.acc:
+                if (n.x, n.y) in self.outputs and (n.acc is not None):
                     self.output_lists[(n.x, n.y)].append(n.acc)
                     n.acc = None
         # Check any register values
@@ -188,9 +188,9 @@ class NodeCluster:
         for row in self.nodes:
             for n in row:
                 # Node just wrote somewhere, step and cycle increase by 1.
-                if n.ready_to_write and not(n.write and n.output):
+                if n.ready_to_write and not(n.write and (n.output is not None)):
                     n.step += 1
                     n.cycle += 1
-                n.ready_to_write = n.write and n.output
+                n.ready_to_write = n.write and (n.output is not None)
 
 
