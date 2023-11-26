@@ -40,7 +40,9 @@ class Node:
         rep = "┌─────────┐\n"
         if self.memory:
             for i in range(5):
-                rep += f"│{self.get_stack(i):>4} {self.get_stack(i+5):>4}│\n"
+                stack1 = alt_print.get(self.get_stack(i), self.get_stack(i))
+                stack2 = alt_print.get(self.get_stack(i+5), self.get_stack(i))
+                rep += f"│{stack1:>4} {stack2:>4}│\n"
         elif self.dead:
             rep += "│         │\n"\
                    "│ ▄▄▄▄▄▄▄ │\n"\
@@ -125,6 +127,9 @@ class Node:
                     # the cluster controls that.
                     out_node.write = None
                     out_node.output = None
+                    # If this is a memory node, pop off the stack.
+                    if out_node.memory:
+                        out_node.stack.pop()
                     return value
                 return value
             raise Exception(f"Invalid argument \"{value}\"")
@@ -280,12 +285,11 @@ class Node:
         if self.memory:
             # For stack memory, always be trying to get a value.
             value = self.get_value('ANY')
-            if value:
+            # Stack memory nodes can get multiple values in a cycle.
+            while value is not None:
                 self.stack.append(value)
+                value = self.get_value('ANY')
             if self.stack:
-                if not self.ready_to_write:
-                    # Our output was read; pop off the stack.
-                    self.stack.pop()
                 self.write = 'ANY'
                 self.output = self.get_stack(0)
         if len(self.instructions) == 0:
