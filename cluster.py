@@ -1,12 +1,14 @@
 import node
 import curses
+from datetime import datetime
 import time
 
 class NodeCluster:
     """ Class for the cluster of notes in the TIS-100, to allow the individual
     nodes to communicate with each other.
     """
-    def __init__(self, width, height, inputs={}, outputs=[], filename=None, test_outputs={}, speed=50, memory=[], dead=[], debug=False):
+    def __init__(self, width, height, inputs={}, outputs=[], image_port=None, image_dim=(30, 18), test_image=[], filename=None, test_outputs={}, speed=50, memory=[], dead=[], debug=False):
+        self.screen = curses.initscr()
         self.width = width
         self.height = height
         # Inputs and outputs will be dictionaries of (x, y): [values]
@@ -23,6 +25,12 @@ class NodeCluster:
         self.cycle = 0
         self.nodes = []
         self.go = True
+        self.image_port = image_port
+        self.image_dim = image_dim
+        self.test_image = test_image
+        self.image_pos = [None, None]
+        if self.image_port:
+            self.image = [[0] * image_dim[0] for _ in range(image_dim[1])]
         for y in range(height+2):
             row = []
             for x in range(width+2):
@@ -50,7 +58,7 @@ class NodeCluster:
             offset = 0
             for x, y in self.inputs.keys():
                 input_list = [str(x) for x in self.inputs[(x, y)]]
-                rep += f"({x}, {y}): {', '.join(input_list)}\n"
+                rep += f"({x}, {y}): {' '.join(input_list)}\n"
         lines = len(self.nodes[1][1].__repr__().split('\n'))
         for y in range(offset, self.height+2-offset):
             for i in range(lines):
@@ -60,9 +68,9 @@ class NodeCluster:
         for x, y in self.outputs:
             if self.debug:
                 test_list = [str(x) for x in self.test_outputs[(x, y)]]
-                rep += f"({x}, {y}): {', '.join(test_list)}\n"
+                rep += f"({x}, {y}): {' '.join(test_list)}\n"
             output_list = [str(x) for x in self.output_lists[(x, y)]]
-            rep += f"({x}, {y}): {', '.join(output_list)}\n"
+            rep += f"({x}, {y}): {' '.join(output_list)}\n"
         return rep
 
     def load(self, filename):
@@ -128,30 +136,82 @@ class NodeCluster:
         code = f"MOV {direction} ACC"
         return code
 
+    def write_color(self, y, x, color):
+        width = len(self.nodes[1][1].__repr__().split('\n')[0])
+        width *= self.width
+        curses.init_pair(1, 0, 0)
+        curses.init_pair(2, 7, 0)
+        curses.init_pair(3, -1, -1)
+        curses.init_pair(4, 0, 1)
+        if color == 0:
+            self.screen.addstr(y, width+x, " ")
+            return
+        if color == 1:
+            self.screen.addstr(y, width+x, " ", curses.color_pair(1))
+            return
+        if color == 2:
+            self.screen.addstr(y, width+x, " ", curses.color_pair(2) | curses.A_REVERSE)
+            return
+        if color == 3:
+            self.screen.addstr(y, width+x, " ", curses.color_pair(3) | curses.A_REVERSE)
+            return
+        if color == 4:
+            self.screen.addstr(y, width+x, " ", curses.color_pair(4))
+            return
+
+    def draw_image(self, value):
+        if value < 0:
+            self.image_pos = [None, None]
+            return
+        if self.image_pos[0] is None:
+            self.image_pos[0] = value
+            return
+        if self.image_pos[1] is None:
+            self.image_pos[1] = value
+            return
+        if self.image_pos[0] >= self.image_dim[0]:
+            return
+        if self.image_pos[1] >= self.image_dim[1]:
+            return
+        self.image[self.image_pos[1]][self.image_pos[0]] = value
+        self.write_color(self.image_pos[1], self.image_pos[0], value)
+        self.image_pos[0] = self.image_pos[0] + 1
+
     def run(self):
         try:
-            stdscr = curses.initscr()
-            stdscr.clear()
+            curses.start_color()
+            curses.use_default_colors()
+            self.screen.clear()
             curses.noecho()
             curses.cbreak()
-            stdscr.keypad(1)
+            self.screen.keypad(1)
+            curses.curs_set(0);
+            last = datetime.now()
             while(True):
                 try:
-                    stdscr.addstr(0, 0, f"Cycle: {self.cycle}")
-                    stdscr.addstr(1, 0, self.__repr__())
-                    stdscr.refresh()
+                    self.screen.addstr(0, 0, f"Cycle: {self.cycle}")
+                    tis = self.__repr__().split('\n')
+                    for i, line in enumerate(tis):
+                        try:
+                            self.screen.addstr(i+1, 0, line)
+                        except:
+                            pass
+                    self.screen.refresh()
                     self.run_once()
                     if self.speed == 0:
-                        char = stdscr.getch()
+                        char = self.screen.getch()
                     else:
-                        time.sleep(1 / self.speed)
+                        delta, last = (datetime.now() - last), datetime.now()
+                        delta = delta.seconds + delta.microseconds/1000000
+                        time.sleep(max((1 / self.speed) - delta, 0))
                 except KeyboardInterrupt:
                     break
         finally:
-            stdscr.keypad(0)
+            self.screen.keypad(0)
             curses.echo()
             curses.nocbreak()
             curses.endwin()
+            curses.curs_set(1);
             self.cycle = 0
             self.go = True
             for (x, y) in self.outputs:
@@ -159,10 +219,15 @@ class NodeCluster:
             for row in self.nodes:
                 for n in row:
                     n.__init__(self, n.x, n.y, code=n.code, memory=n.memory, dead=n.dead)
+            self.image_pos = [None, None]
+            if self.image_port:
+                self.image = [[0] * self.image_dim[0] for _ in range(self.image_dim[1])]
 
     def run_once(self):
         # Check if test_outputs is equal to output_lists and stop
         if self.test_outputs == self.output_lists:
+            self.go = False
+        if self.image == self.test_image:
             self.go = False
         if not self.go:
             return
@@ -175,6 +240,8 @@ class NodeCluster:
                 # output list, then clear it.
                 if (n.x, n.y) in self.outputs and (n.acc is not None):
                     self.output_lists[(n.x, n.y)].append(n.acc)
+                    if (n.x, n.y) == self.image_port:
+                        self.draw_image(n.acc)
                     n.acc = None
         # Check any register values
         dirs = {
