@@ -58,6 +58,9 @@ class NodeCluster:
                     rep += self.nodes[y][x].__repr__().split('\n')[i]
                 rep += "\n"
         for x, y in self.outputs:
+            if self.debug:
+                test_list = [str(x) for x in self.test_outputs[(x, y)]]
+                rep += f"({x}, {y}): {', '.join(test_list)}\n"
             output_list = [str(x) for x in self.output_lists[(x, y)]]
             rep += f"({x}, {y}): {', '.join(output_list)}\n"
         return rep
