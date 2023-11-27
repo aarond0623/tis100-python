@@ -50,8 +50,8 @@ class Node:
         elif self.dead:
             rep += "│ ▄▄▄▄▄▄ │\n"\
                    "│  DEAD  │\n"\
-                   "│ ▀▀▀▀▀▀ │\n"\
-                   "│        │\n"
+                   "│  NODE  │\n"\
+                   "│ ▀▀▀▀▀▀ │\n"
         else:
             rep += f"│ACC {alt_print.get(self.acc, self.acc):>4}│\n"
             rep += f"│BAK {self.bak:>4}│\n"
