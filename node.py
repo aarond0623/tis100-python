@@ -63,8 +63,8 @@ class Node:
             if len(self.instructions) == 0:
                 step = 0
             else:
-                step = self.step % len(self.instructions)
-            rep += f"│{step:>3}"
+                step = (self.step % len(self.instructions)) + 1
+            rep += f"│{step:<3}"
             try:
                 idle = 100 - round((self.cycle * 100) / self.cluster.cycle)
             except ZeroDivisionError:
