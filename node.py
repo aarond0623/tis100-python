@@ -43,9 +43,9 @@ class Node:
         mode = {'IDLE': 'ID', 'RUN': 'RN', 'READ': 'RD', 'WRTE': 'WR'}
         rep = "┌────────┐\n"
         if self.memory:
-            for i in range(5):
+            for i in range(4):
                 stack1 = alt_print.get(self.get_stack(i), self.get_stack(i))
-                stack2 = alt_print.get(self.get_stack(i+5), self.get_stack(i))
+                stack2 = alt_print.get(self.get_stack(i+4), self.get_stack(i))
                 rep += f"│{stack1:>3}  {stack2:>3}│\n"
         elif self.dead:
             rep += "│ ▄▄▄▄▄▄ │\n"\
