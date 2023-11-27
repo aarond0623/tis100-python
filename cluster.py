@@ -29,6 +29,7 @@ class NodeCluster:
         self.image_dim = image_dim
         self.test_image = test_image
         self.image_pos = [None, None]
+        self.image = None
         if self.image_port:
             self.image = [[0] * image_dim[0] for _ in range(image_dim[1])]
         for y in range(height+2):
