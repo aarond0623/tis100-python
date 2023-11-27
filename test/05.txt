@@ -1,0 +1,25 @@
+@1
+mov up right
+
+@2
+mov up acc
+jlz a
+jgz b
+add left
+add right
+mov acc down
+jro -6
+a:mov left down
+mov right nil
+jro -9
+b:mov right down
+mov left nil
+
+@3
+mov up left
+
+@6
+mov up down
+
+@9
+mov up down

@@ -1,0 +1,25 @@
+@1
+jro 2
+reset: mov 0 down
+mov 0 acc
+swp
+mov -2 acc
+start: swp
+add up
+jgz reset
+swp
+add 1
+jgz yes
+mov 0 down
+jmp start
+yes: mov 1 down
+jmp start
+
+@4
+mov up down
+
+@8
+mov up right
+
+@9
+mov left down

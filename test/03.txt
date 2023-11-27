@@ -1,0 +1,20 @@
+@1
+mov up acc
+sub right
+mov acc down
+
+@2
+mov up left
+
+@5
+mov up down
+
+@8
+mov up acc
+mov acc right
+mov acc down
+
+@9
+mov 0 acc
+sub left
+mov acc down

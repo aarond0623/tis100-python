@@ -1,0 +1,57 @@
+@1
+mov up acc
+mov acc right
+mov acc down
+
+@2
+mov 0 acc
+swp
+start:mov left acc
+jez reset
+mov acc right
+swp
+sub right
+jlz max
+add right
+swp
+jmp start
+max: mov right acc
+jro -3
+reset: swp
+mov acc down
+
+@3
+mov left acc
+mov acc left
+mov acc left
+
+@4
+mov right acc
+mov acc right
+mov acc right
+
+@5
+mov 999 acc
+swp
+start: mov up acc
+jez reset
+mov acc left
+swp
+sub left
+jgz min
+add left
+swp
+jmp start
+min: mov left acc
+jro -3
+reset: swp
+mov acc down
+
+@6
+mov up down
+
+@8
+mov up down
+
+@9
+mov up down

@@ -1,0 +1,23 @@
+@1
+mov up acc
+mov acc right
+mov acc right
+
+@2
+sub left
+jlz abs
+sub 9
+jgz edge
+mov 0 down
+jro 4
+abs:  neg
+      jro -5
+edge: mov 1 down
+mov left acc
+jro -10
+
+@6
+mov up down
+
+@9
+mov up down

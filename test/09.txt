@@ -1,0 +1,79 @@
+@0
+jmp 0
+e0: sub 1
+    mov 0 down
+0:  add up
+    jgz e1
+    mov 0 down
+    jmp 0
+e1: mov 1 down
+1:  sub up
+    jgz e0
+    add 1
+    mov 0 down
+    jmp 1
+
+@1
+jmp 0
+e0: sub 1
+    mov 0 down
+0:  add up
+    jgz e1
+    mov 0 down
+    jmp 0
+e1: mov 2 down
+1:  sub up
+    jgz e0
+    add 1
+    mov 0 down
+    jmp 1
+
+@2
+jmp 0
+e0: sub 1
+    mov 0 down
+0:  add up
+    jgz e1
+    mov 0 down
+    jmp 0
+e1: mov 3 down
+1:  sub up
+    jgz e0
+    add 1
+    mov 0 down
+    jmp 1
+
+@3
+jmp 0
+e0: sub 1
+    mov 0 down
+0:  add up
+    jgz e1
+    mov 0 down
+    jmp 0
+e1: mov 4 down
+1:  sub up
+    jgz e0
+    add 1
+    mov 0 down
+    jmp 1
+
+@4
+mov up right
+
+@5
+mov left acc
+add up
+mov acc right
+
+@6
+mov left acc
+add up
+add right
+mov acc down
+
+@7
+mov up left
+
+@9
+mov up down

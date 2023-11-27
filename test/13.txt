@@ -1,0 +1,35 @@
+@1
+reset:
+  swp
+  mov up acc
+  swp
+loop:
+  mov right acc
+  jez reset
+  swp
+  mov acc right
+  swp
+  jmp loop
+
+@2
+mov up acc
+loop:
+  jez out
+  sub 1
+  mov 1 left
+  swp
+  add left
+  swp
+  jmp loop
+out:
+  swp
+  mov acc down
+  mov 0 left
+  mov 0 acc
+  swp
+
+@5
+mov up down
+
+@7
+mov up down

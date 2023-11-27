@@ -1,0 +1,13 @@
+@1
+mov up acc
+add acc
+mov acc right
+
+@2
+mov left down
+
+@5
+mov up down
+
+@8
+mov up down

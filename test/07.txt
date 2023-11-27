@@ -1,0 +1,40 @@
+@1
+mov up acc
+mov acc right
+jgz add
+swp
+mov acc down
+mov right nil
+mov 0 acc
+swp
+jro -8
+add:
+  swp
+  add right
+  swp
+
+@2
+mov left acc
+mov acc left
+jgz count
+swp
+mov acc down
+mov 0 acc
+swp
+jro -7
+count:
+  swp
+  add 1
+  swp
+
+@4
+mov up down
+
+@5
+mov up down
+
+@8
+mov up down
+
+@9
+mov up down

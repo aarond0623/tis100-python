@@ -1,0 +1,34 @@
+@0
+mov up down
+
+@4
+mov up down
+
+@5
+mov up right
+
+@6
+mov left acc
+mov acc right
+jgz greater
+mov 0 down
+jro -4
+greater:
+mov 1 down
+
+@7
+mov left acc
+mov acc right
+jez equal
+mov 0 down
+jro -4
+equal:
+mov 1 down
+
+@8
+mov left acc
+jlz less
+mov 0 down
+jro -3
+less:
+mov 1 down

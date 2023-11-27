@@ -1,0 +1,58 @@
+@5
+i:mov 0 down
+  mov acc down
+  swp
+  mov 30 acc
+d:mov 3 down
+  sub 1
+  jez r
+  jmp d
+r:mov -1 down
+  swp
+  add 1
+  jmp 1
+
+@8
+mov 3 acc
+swp
+i:mov 15 acc
+d:swp
+  mov acc right
+  swp
+  sub 1
+  jez r
+  jmp d
+r:swp
+  neg
+  add 3
+  swp
+  jmp i
+
+@9
+i:mov 0 down
+  mov acc down
+  swp
+  mov 15 acc
+d:mov left down
+  mov right down
+  sub 1
+  jez r
+  jmp d
+r:mov -1 down
+  swp
+  add 1
+  jmp i
+
+@10
+i:mov 15 acc
+d:swp
+  mov acc left
+  swp
+  sub 1
+  jez r
+  jmp d
+r:swp
+  neg
+  add 3
+  swp
+  jmp i
