@@ -13,6 +13,8 @@ class Node:
         self.last = None
         self.code = code
         self.instructions = []
+        # Breakpoints
+        self.breakpoints = []
         self.parse_code()
         self.step = 0
         self.cycle = 0
@@ -326,6 +328,10 @@ class Node:
         instructions = []
         for line in code:
             line = re.split('[,\s]+', line)
+            if line[0][0] == '!':
+                # Found breakpoint
+                line[0] = line[0][1:]
+                self.breakpoints.append(len(instructions))
             if line[0] == 'NOP':
                 instructions.append(self.nop)
             elif line[0] == 'MOV':

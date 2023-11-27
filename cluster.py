@@ -201,7 +201,7 @@ class NodeCluster:
                     self.screen.refresh()
                     self.run_once()
                     if self.speed == 0:
-                        char = self.screen.getch()
+                        self.screen.getch()
                     else:
                         delta, last = (datetime.now() - last), datetime.now()
                         delta = delta.seconds + delta.microseconds/1000000
@@ -231,12 +231,19 @@ class NodeCluster:
             self.go = False
         if self.image == self.test_image:
             self.go = False
-        if not self.go:
-            return
+        if not self.go and self.speed > 0:
+            char = self.screen.getch()
+            if char == ord('r'):
+                self.go = True
         self.cycle += 1
         # Execute instructions
         for row in self.nodes:
             for n in row:
+                if self.speed > 0 and len(n.instructions) > 0 and (n.step % len(n.instructions)) in n.breakpoints:
+                    self.go = False
+                    char = self.screen.getch()
+                    if char == ord('r'):
+                        self.go = True
                 n.exe()
                 # If this is an output node, check the ACC, add it to the
                 # output list, then clear it.
