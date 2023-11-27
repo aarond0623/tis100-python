@@ -39,37 +39,38 @@ class Node:
     def __repr__(self):
         # Alternative names for nodes or modes for printing.
         alt_print = {'RIGHT': 'RGHT', None: 'N/A'}
-        rep = "┌─────────┐\n"
+        arrow = {'UP': '↑', 'DOWN': '↓', 'LEFT': '←', 'RIGHT': '→', 'ANY': '🗘', None: ' '}
+        mode = {'IDLE': 'ID', 'RUN': 'RN', 'READ': 'RD', 'WRTE': 'WR'}
+        rep = "┌────────┐\n"
         if self.memory:
             for i in range(5):
                 stack1 = alt_print.get(self.get_stack(i), self.get_stack(i))
                 stack2 = alt_print.get(self.get_stack(i+5), self.get_stack(i))
-                rep += f"│{stack1:>4} {stack2:>4}│\n"
+                rep += f"│{stack1:>3}  {stack2:>3}│\n"
         elif self.dead:
-            rep += "│         │\n"\
-                   "│ ▄▄▄▄▄▄▄ │\n"\
-                   "│ BLOCKED │\n"\
-                   "│ ▀▀▀▀▀▀▀ │\n"\
-                   "│         │\n"
+            rep += "│ ▄▄▄▄▄▄ │\n"\
+                   "│  DEAD  │\n"\
+                   "│ ▀▀▀▀▀▀ │\n"\
+                   "│        │\n"
         else:
-            rep += f"│ACC: {alt_print.get(self.acc, self.acc):>4}│\n"
-            rep += f"│BAK: {self.bak:>4}│\n"
-            rep += f"│LST: {alt_print.get(self.last, self.last):>4}│\n"
-            rep += f"│MOD: {alt_print.get(self.mode, self.mode):>4}│\n"
-            try:
-                idle = 100 - round((self.cycle * 100) / self.cluster.cycle)
-            except ZeroDivisionError:
-                idle = 0
-            rep += f"│IDL: {idle:>3}%│\n"
-        if self.cluster.debug:
-            rep += f"│{alt_print.get(self.write, self.write):>4}"
-            rep += f" {alt_print.get(self.output, self.output):>4}│\n"
+            rep += f"│ACC {alt_print.get(self.acc, self.acc):>4}│\n"
+            rep += f"│BAK {self.bak:>4}│\n"
+            if self.last:
+                rep += f"│{arrow[self.last]}|{mode[self.mode]}"
+            else:
+                rep += f"│{mode[self.mode]}  "
+            rep += f"{arrow[self.write]}{alt_print.get(self.output, self.output):>3}│\n"
             if len(self.instructions) == 0:
                 step = 0
             else:
                 step = self.step % len(self.instructions)
-            rep += f"│{step:>4} {self.cycle:>4}│\n"
-        rep += "└─────────┘"
+            rep += f"│{step:>3}"
+            try:
+                idle = 100 - round((self.cycle * 100) / self.cluster.cycle)
+            except ZeroDivisionError:
+                idle = 0
+            rep += f" {idle:>3}%│\n"
+        rep += "└────────┘"
         return rep
 
     def get_stack(self, i):
@@ -125,6 +126,12 @@ class Node:
                         (out_node.write == rdirs[port] or
                         out_node.write == 'ANY')):
                     value = out_node.output
+                    # If our port was ANY, set LAST:
+                    if len(src) > 1:
+                        self.last = port
+                    # If out port was ANY, set LAST
+                    if out_node.write == 'ANY':
+                        out_node.last = rdirs[port]
                     # Set these to None, but don't touch ready_to_write; only
                     # the cluster controls that.
                     out_node.write = None
