@@ -23,6 +23,8 @@ class Node:
         self.output = None
         # The register this node is writing to.
         self.write = None
+        # The register this node is reading from.
+        self.read = None
         # Whether or not this node is ready to write. Nodes take two cycles to
         # be ready to write to another node. First, output and write direction
         # are set. Then at the end of the cycle, the node is marked ready to
@@ -59,7 +61,11 @@ class Node:
                 rep += f"│{arrow[self.last]}|{mode[self.mode]}"
             else:
                 rep += f"│{mode[self.mode]}  "
-            rep += f"{arrow[self.write]}{alt_print.get(self.output, self.output):>3}│\n"
+            if self.read:
+                rep += f"{arrow[self.read]}"
+            else:
+                rep += f"{arrow[self.write]}"
+            rep += f"{alt_print.get(self.output, self.output):>3}│\n"
             if len(self.instructions) == 0:
                 step = 0
             else:
@@ -99,6 +105,8 @@ class Node:
                     return 0
                 else:
                     src = self.last
+            # Set self.read for printing
+            self.read = src
             # When reading from ANY, this is the precedence for ports.
             if src == 'ANY':
                 src = ('LEFT', 'RIGHT', 'UP', 'DOWN')
@@ -126,6 +134,7 @@ class Node:
                         (out_node.write == rdirs[port] or
                         out_node.write == 'ANY')):
                     value = out_node.output
+                    self.read = None
                     # If our port was ANY, set LAST:
                     if len(src) > 1:
                         self.last = port

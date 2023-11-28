@@ -205,11 +205,12 @@ class NodeCluster:
                     else:
                         delta, last = (datetime.now() - last), datetime.now()
                         delta = delta.seconds + delta.microseconds/1000000
-                        time.sleep(max((1 / self.speed) - delta, 0))
+                        time.sleep(max((1 / self.speed) - delta, 1 / self.speed))
                 except KeyboardInterrupt:
                     break
         finally:
             self.screen.keypad(0)
+            curses.flushinp()
             curses.echo()
             curses.nocbreak()
             curses.endwin()
@@ -221,6 +222,8 @@ class NodeCluster:
             for row in self.nodes:
                 for n in row:
                     n.__init__(self, n.x, n.y, code=n.code, memory=n.memory, dead=n.dead)
+                    if (n.x, n.y) in self.outputs:
+                        n.acc = None
             self.image_pos = [None, None]
             if self.image_port:
                 self.image = [[0] * self.image_dim[0] for _ in range(self.image_dim[1])]
