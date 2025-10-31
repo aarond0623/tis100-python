@@ -183,7 +183,6 @@ class NodeCluster:
         if self.image_pos[1] >= self.image_dim[1]:
             return
         self.image[self.image_pos[1]][self.image_pos[0]] = value
-        self.write_color(self.image_pos[1], self.image_pos[0], value)
         self.image_pos[0] = self.image_pos[0] + 1
 
     def run(self):
@@ -199,6 +198,7 @@ class NodeCluster:
             last = datetime.now()
             while(True):
                 try:
+                    self.screen.clear()
                     # Monitor the node cycles, so we can stop if nothing changes.
                     old_cycles = []
                     for row in self.nodes[1:-1]:
@@ -211,6 +211,9 @@ class NodeCluster:
                             self.screen.addstr(i+1, 0, line)
                         except:
                             pass
+                    for i, row in enumerate(self.image):
+                        for j, value in enumerate(row):
+                            self.write_color(i, j, value)
                     self.screen.refresh()
                     self.run_once()
                     cycles = []

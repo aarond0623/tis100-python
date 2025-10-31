@@ -3,6 +3,7 @@
 import argparse
 import re
 import sys
+import time
 import cluster
 
 if __name__ == '__main__':
@@ -17,12 +18,14 @@ if __name__ == '__main__':
         help="File with layout data. If this option is specified, all other layout options are ignored.")
     parser.add_argument('-i', '--input', type=int, action='append', default=[],
         help="Node index that has an input connected to it. Nodes must be on the cluster boundary. This argument can be used multiple times.")
-    parser.add_argument('--data', type=argparse.FileType('r'), default=sys.stdin,
+    parser.add_argument('--data', type=argparse.FileType('r'), default=(None if sys.stdin.isatty() else sys.stdin),
         help="File with input data. Data is read one input per line. Defaults to stdin.")
     parser.add_argument('-o', '--output', type=int, action='append', default=[],
         help="Node index that has an output connected to it. Nodes must be on the cluster boundary. This argument can be used multiple times.")
     parser.add_argument('--output_image', type=int,
         help="Node index to be treated as an image output. Only one image output is supported.")
+    parser.add_argument('--test_data', type=argparse.FileType('r'),
+        help="File with test data to compare outputs against.")
     parser.add_argument('-m', '--memory', type=int, action='append', default=[],
         help="Node index that is a stack memory node. This argument can be used multiple times.")
     parser.add_argument('-d', '--dead', type=int, action='append', default=[],
@@ -35,6 +38,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     data = None
+    test = None
 
     if args.layout:
         lines = args.layout.read().splitlines()
@@ -59,9 +63,10 @@ if __name__ == '__main__':
                     args.dead.append(i)
                 i += 1
         data_dict = {}
+        test_dict = {}
         for line in lines[args.height+1:]:
-            input_re = re.compile(r'^I(\d+)(?:\D+(\d+(?:\D+\d+)*))?$')
-            output_re = re.compile(r'^O(\d+)')
+            input_re = re.compile(r'^I(\d+)(?:\D+(-?\d+(?:\D+-?\d+)*))?$')
+            output_re = re.compile(r'^O(\d+).*?(?:\D+(-?\d+(?:\D+-?\d+)*))?$')
             match = input_re.match(line)
             if match:
                 args.input.append(int(match.group(1)))
@@ -74,13 +79,23 @@ if __name__ == '__main__':
                     print(args.output_image)
                 else:
                     args.output.append((args.height - 1) * args.width + int(match.group(1)))
+                if match.group(2):
+                    test_dict[int(match.group(1))] = match.group(2)
+
         if data_dict.keys():
             data = []
             for i in sorted(data_dict.keys()):
                 data.append(data_dict[i])
+        if test_dict.keys():
+            test = []
+            for i in sorted(test_dict.keys()):
+                test.append(test_dict[i])
 
-    if not data:
+    if not data and args.data:
         data = args.data.read().splitlines()
+
+    if not test and args.test_data:
+        test = args.test_data.read().splitlines()
 
     c = cluster.NodeCluster(args.width, args.height, speed=args.speed)
 
@@ -97,13 +112,14 @@ if __name__ == '__main__':
             x = args.width + 1
         try:
             c.inputs[(x, y)] = [int(x) for x in re.findall(r'\d+', data[i])]
-        except IndexError:
+        except:
             print(f"Cound not load data for input {node}.")
+            time.sleep(1)
             c.inputs[(x, y)] = []
         c.nodes[y][x].code = c.create_input(x, y)
         c.nodes[y][x].parse_code()
 
-    for node in args.output:
+    for i, node in enumerate(sorted(args.output)):
         x = node % args.width + 1
         y = node // args.width + 1
         if y == 1:
@@ -115,6 +131,10 @@ if __name__ == '__main__':
         elif x == args.width:
             x = args.width + 1
         c.outputs.append((x, y))
+        try:
+            c.test_outputs[(x, y)] = [int(x) for x in re.findall(r'\d+', test[i])]
+        except:
+            pass
         c.nodes[y][x].code = c.create_output(x, y)
         c.nodes[y][x].parse_code()
         c.nodes[y][x].acc = None
