@@ -1,13 +1,21 @@
 @1
-mov up acc
-add acc
-mov acc right
+## SIG AMP MULTI
+MOV UP RIGHT
+MOV UP DOWN
 
 @2
-mov left down
+MOV LEFT ACC
+ADD ACC
+MOV ACC DOWN
+
+@4
+MOV UP ACC
+ADD ACC
+MOV ACC RIGHT
 
 @5
-mov up down
+MOV UP DOWN
+MOV LEFT DOWN
 
 @8
-mov up down
+MOV UP DOWN

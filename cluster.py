@@ -1,6 +1,7 @@
 import node
 import curses
 from datetime import datetime
+import textwrap
 import time
 
 class NodeCluster:
@@ -71,7 +72,11 @@ class NodeCluster:
                 test_list = [str(x) for x in self.test_outputs[(x, y)]]
                 rep += f"({x}, {y}): {' '.join(test_list)}\n"
             output_list = [str(x) for x in self.output_lists[(x, y)]]
-            rep += f"({x}, {y}): {' '.join(output_list)}\n"
+            if self.debug:
+                rep += textwrap.fill(f"({x}, {y}): {' '.join(output_list)}", self.screen.getmaxyx()[1]) + "\n"
+            else:
+                rep += textwrap.fill(f"{' '.join(output_list)}", self.screen.getmaxyx()[1]) + "\n"
+
         return rep
 
     def load(self, filename):
@@ -144,20 +149,23 @@ class NodeCluster:
         curses.init_pair(2, 7, 0)
         curses.init_pair(3, -1, -1)
         curses.init_pair(4, 0, 1)
-        if color == 0:
-            self.screen.addstr(y, width+x, " ")
-            return
-        if color == 1:
-            self.screen.addstr(y, width+x, " ", curses.color_pair(1))
-            return
-        if color == 2:
-            self.screen.addstr(y, width+x, " ", curses.color_pair(2) | curses.A_REVERSE)
-            return
-        if color == 3:
-            self.screen.addstr(y, width+x, " ", curses.color_pair(3) | curses.A_REVERSE)
-            return
-        if color == 4:
-            self.screen.addstr(y, width+x, " ", curses.color_pair(4))
+        try:
+            if color == 0:
+                self.screen.addstr(y, width+x, " ")
+                return
+            if color == 1:
+                self.screen.addstr(y, width+x, " ", curses.color_pair(1))
+                return
+            if color == 2:
+                self.screen.addstr(y, width+x, " ", curses.color_pair(2) | curses.A_REVERSE)
+                return
+            if color == 3:
+                self.screen.addstr(y, width+x, " ", curses.color_pair(3) | curses.A_REVERSE)
+                return
+            if color == 4:
+                self.screen.addstr(y, width+x, " ", curses.color_pair(4))
+                return
+        except:
             return
 
     def draw_image(self, value):
@@ -191,6 +199,11 @@ class NodeCluster:
             last = datetime.now()
             while(True):
                 try:
+                    # Monitor the node cycles, so we can stop if nothing changes.
+                    old_cycles = []
+                    for row in self.nodes[1:-1]:
+                        for n in row:
+                            old_cycles.append(n.cycle)
                     self.screen.addstr(0, 0, f"Cycle: {self.cycle}")
                     tis = self.__repr__().split('\n')
                     for i, line in enumerate(tis):
@@ -200,6 +213,14 @@ class NodeCluster:
                             pass
                     self.screen.refresh()
                     self.run_once()
+                    cycles = []
+                    for row in self.nodes[1:-1]:
+                        for n in row:
+                            cycles.append(n.cycle)
+                    if old_cycles == cycles and self.cycle > 1:
+                        if self.go:
+                            self.cycle -= 1
+                        self.go = False
                     if self.speed == 0:
                         self.screen.getch()
                     else:
@@ -238,6 +259,8 @@ class NodeCluster:
             char = self.screen.getch()
             if char == ord('r'):
                 self.go = True
+            else:
+                self.cycle -= 1
         self.cycle += 1
         # Execute instructions
         for row in self.nodes:

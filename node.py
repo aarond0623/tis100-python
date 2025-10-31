@@ -40,7 +40,7 @@ class Node:
 
     def __repr__(self):
         # Alternative names for nodes or modes for printing.
-        alt_print = {'RIGHT': 'RGHT', None: '   '}
+        alt_print = {'RIGHT': 'RGHT', None: '\xA0\xA0\xA0'}
         arrow = {'UP': '↑', 'DOWN': '↓', 'LEFT': '←', 'RIGHT': '→', 'ANY': '🗘', None: ' '}
         mode = {'IDLE': 'ID', 'RUN': 'RN', 'READ': 'RD', 'WRTE': 'WR'}
         rep = "┌────────┐\n"

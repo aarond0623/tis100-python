@@ -18,5 +18,6 @@ c = cluster.NodeCluster(4, 3,
                         image_port=(3,4),
                         test_image=image,
                         dead=[(1,3)],
-                        filename="17.txt")
+                        filename="17.txt",
+                        speed=500)
 c.run()
