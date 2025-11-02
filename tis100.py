@@ -26,10 +26,14 @@ if __name__ == '__main__':
         help="Node index to be treated as an image output. Only one image output is supported.")
     parser.add_argument('--test_data', type=argparse.FileType('r'),
         help="File with test data to compare outputs against.")
+    parser.add_argument('--test_image', type=argparse.FileType('r'),
+        help="File with image test data to compare image output against.")
     parser.add_argument('-m', '--memory', type=int, action='append', default=[],
         help="Node index that is a stack memory node. This argument can be used multiple times.")
     parser.add_argument('-d', '--dead', type=int, action='append', default=[],
         help="Node index of a dead node. This argument can be used multiple times.")
+    parser.add_argument('-g', '--gui', action='store_true',
+        help="Use this flag to display the graphical interface.")
     parser.add_argument('file', type=str,
         help="Name of file to load as a program.")
     parser.add_argument('--help', action='help',
@@ -39,6 +43,7 @@ if __name__ == '__main__':
 
     data = None
     test = None
+    test_image = []
 
     if args.layout:
         lines = args.layout.read().splitlines()
@@ -65,22 +70,27 @@ if __name__ == '__main__':
         data_dict = {}
         test_dict = {}
         for line in lines[args.height+1:]:
-            input_re = re.compile(r'^I(\d+)(?:\D+(-?\d+(?:\D+-?\d+)*))?$')
-            output_re = re.compile(r'^O(\d+).*?(?:\D+(-?\d+(?:\D+-?\d+)*))?$')
+            input_re = re.compile(r'^I(\d+)(?:\s+([A-Za-z]+))?(?:\s+(-?\d+(?:\s+-?\d+)*))?$')
+            output_re = re.compile(r'^O(\d+)(?:\s+([A-Za-z]+))?(?:\s+(-?\d+(?:\s+-?\d+)*))?$')
+            image_re = re.compile(r'^(\d+)$')
             match = input_re.match(line)
             if match:
                 args.input.append(int(match.group(1)))
-                if match.group(2):
-                    data_dict[int(match.group(1))] = match.group(2)
+                if match.group(3):
+                    data_dict[int(match.group(1))] = match.group(3)
             match = output_re.match(line)
             if match:
-                if 'IMAGE' in line.upper():
+                if match.group(2) and match.group(2) == "IMAGE":
                     args.output_image = (args.height - 1) * args.width + int(match.group(1))
-                    print(args.output_image)
+
                 else:
                     args.output.append((args.height - 1) * args.width + int(match.group(1)))
-                if match.group(2):
-                    test_dict[int(match.group(1))] = match.group(2)
+                if match.group(3):
+                    test_dict[int(match.group(1))] = match.group(3)
+            match = image_re.match(line)
+            if match:
+                test_image.append([int(x) for x in match.group(1)])
+
 
         if data_dict.keys():
             data = []
@@ -96,8 +106,14 @@ if __name__ == '__main__':
 
     if not test and args.test_data:
         test = args.test_data.read().splitlines()
+    if not test_image and args.test_image:
+        try:
+            test_image = args.test_image.read().splitlines()
+            test_image = [[int(x) for x in line] for line in test_image]
+        except:
+            test_image = []
 
-    c = cluster.NodeCluster(args.width, args.height, speed=args.speed)
+    c = cluster.NodeCluster(args.width, args.height, speed=args.speed, gui=args.gui, test_image=test_image)
 
     for i, node in enumerate(sorted(args.input)):
         x = node % args.width + 1
@@ -111,7 +127,7 @@ if __name__ == '__main__':
         elif x == args.width:
             x = args.width + 1
         try:
-            c.inputs[(x, y)] = [int(x) for x in re.findall(r'\d+', data[i])]
+            c.inputs[(x, y)] = [int(x) for x in re.findall(r'-?\d+', data[i])]
         except:
             print(f"Cound not load data for input {node}.")
             time.sleep(1)
@@ -132,7 +148,7 @@ if __name__ == '__main__':
             x = args.width + 1
         c.outputs.append((x, y))
         try:
-            c.test_outputs[(x, y)] = [int(x) for x in re.findall(r'\d+', test[i])]
+            c.test_outputs[(x, y)] = [int(x) for x in re.findall(r'-?\d+', test[i])]
         except:
             pass
         c.nodes[y][x].code = c.create_output(x, y)

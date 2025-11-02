@@ -2,6 +2,7 @@ import re
 
 MAX_N = 999
 MIN_N = -999
+MAX_STACK = 15
 
 class Node:
     def __init__(self, cluster, x, y, code="", memory=False, dead=False):
@@ -47,7 +48,7 @@ class Node:
         if self.memory:
             for i in range(4):
                 stack1 = alt_print.get(self.get_stack(i), self.get_stack(i))
-                stack2 = alt_print.get(self.get_stack(i+4), self.get_stack(i))
+                stack2 = alt_print.get(self.get_stack(i+4), self.get_stack(i+4))
                 rep += f"│{stack1:>3}  {stack2:>3}│\n"
         elif self.dead:
             rep += "│ ▄▄▄▄▄▄ │\n"\
@@ -148,9 +149,10 @@ class Node:
                     # If this is a memory node, pop off the stack.
                     if out_node.memory:
                         out_node.stack.pop()
-                    return value
-                return value
-            raise Exception(f"Invalid argument \"{value}\"")
+                    if value is not None:
+                        return value
+            return value
+            raise Exception(f"Node {self.x}, {self.y}, step {self.step}: Invalid argument \"{value}\"")
 
     # TIS-100 OPCODES
     # Operations will return True if they are able to execute and False if they
@@ -239,7 +241,7 @@ class Node:
         # Set step to the label value.
         self.mode = 'RUN'
         if label not in labels:
-            raise Exception(f"Undefined label \"{label}\"")
+            raise Exception(f"Node {self.x}, {self.y}, step {self.step}: Undefined label: \"{label}\"")
         self.step = labels[label]
         self.cycle += 1
 
@@ -249,7 +251,7 @@ class Node:
         self.cycle += 1
         if self.acc == 0:
             if label not in labels:
-                raise Exception(f"Undefined label \"{label}\"")
+                raise Exception(f"Node {self.x}, {self.y}, step {self.step}: Undefined label: \"{label}\"")
             self.step = labels[label]
         else:
             self.step += 1
@@ -260,7 +262,7 @@ class Node:
         self.cycle += 1
         if self.acc != 0:
             if label not in labels:
-                raise Exception(f"Undefined label \"{label}\"")
+                raise Exception(f"Node {self.x}, {self.y}, step {self.step}: Undefined label: \"{label}\"")
             self.step = labels[label]
         else:
             self.step += 1
@@ -271,7 +273,7 @@ class Node:
         self.cycle += 1
         if self.acc > 0:
             if label not in labels:
-                raise Exception(f"Undefined label \"{label}\"")
+                raise Exception(f"Node {self.x}, {self.y}, step {self.step}: Undefined label: \"{label}\"")
             self.step = labels[label]
         else:
             self.step += 1
@@ -282,7 +284,7 @@ class Node:
         self.cycle += 1
         if self.acc < 0:
             if label not in labels:
-                raise Exception(f"Undefined label \"{label}\"")
+                raise Exception(f"Node {self.x}, {self.y}, step {self.step}: Undefined label: \"{label}\"")
             self.step = labels[label]
         else:
             self.step += 1
@@ -302,11 +304,12 @@ class Node:
     def exe(self):
         if self.memory:
             # For stack memory, always be trying to get a value.
-            value = self.get_value('ANY')
-            # Stack memory nodes can get multiple values in a cycle.
-            while value is not None:
-                self.stack.append(value)
+            if len(self.stack) < MAX_STACK:
                 value = self.get_value('ANY')
+                # Stack memory nodes can get multiple values in a cycle.
+                while value is not None and len(self.stack) < MAX_STACK:
+                    self.stack.append(value)
+                    value = self.get_value('ANY')
             if self.stack:
                 self.write = 'ANY'
                 self.output = self.get_stack(0)
@@ -343,10 +346,13 @@ class Node:
         labels, code = self.find_labels(code)
         instructions = []
         for line in code:
-            line = re.split('[,\s]+', line)
+            line = re.split(r'[,\s]+', line)
             if line[0][0] == '!':
                 # Found breakpoint
-                line[0] = line[0][1:]
+                if line[0] == "!":
+                    line = line[1:]
+                else:
+                    line[0] = line[0][1:]
                 self.breakpoints.append(len(instructions))
             if line[0] == 'NOP':
                 instructions.append(self.nop)
@@ -377,5 +383,5 @@ class Node:
             elif line[0] == 'HCF':
                 instructions.append(self.hcf)
             else:
-                raise Exception(f"Unknown command: {line[0]}")
+                raise Exception(f"Node {self.x}, {self.y}: Unknown command: {line[0]} in {' '.join(line)}")
         self.instructions = instructions

@@ -8,7 +8,7 @@ class NodeCluster:
     """ Class for the cluster of notes in the TIS-100, to allow the individual
     nodes to communicate with each other.
     """
-    def __init__(self, width, height, inputs={}, outputs=[], image_port=None, image_dim=(30, 18), test_image=[], filename=None, test_outputs={}, speed=50, memory=[], dead=[], debug=False):
+    def __init__(self, width, height, inputs={}, outputs=[], image_port=None, image_dim=(30, 18), test_image=[], filename=None, test_outputs={}, speed=50, memory=[], dead=[], debug=False, gui=False):
         self.screen = None
         self.width = width
         self.height = height
@@ -23,9 +23,11 @@ class NodeCluster:
         self.memory = memory
         self.dead = dead
         self.debug = debug
+        self.gui = gui
         self.cycle = 0
         self.nodes = []
         self.go = True
+        self.frozen = False
         self.image_port = image_port
         self.image_dim = image_dim
         self.test_image = test_image
@@ -187,58 +189,82 @@ class NodeCluster:
 
     def run(self):
         try:
-            self.screen = curses.initscr()
-            curses.start_color()
-            curses.use_default_colors()
-            self.screen.clear()
-            curses.noecho()
-            curses.cbreak()
-            self.screen.keypad(1)
-            curses.curs_set(0);
+            if (self.gui):
+                self.screen = curses.initscr()
+                curses.start_color()
+                curses.use_default_colors()
+                self.screen.clear()
+                curses.noecho()
+                curses.cbreak()
+                self.screen.keypad(1)
+                curses.curs_set(0);
             last = datetime.now()
             while(True):
                 try:
-                    self.screen.clear()
+                    if self.frozen:
+                        time.sleep(1)
+                        continue
                     # Monitor the node cycles, so we can stop if nothing changes.
                     old_cycles = []
                     for row in self.nodes[1:-1]:
                         for n in row:
                             old_cycles.append(n.cycle)
-                    self.screen.addstr(0, 0, f"Cycle: {self.cycle}")
-                    tis = self.__repr__().split('\n')
-                    for i, line in enumerate(tis):
-                        try:
-                            self.screen.addstr(i+1, 0, line)
-                        except:
-                            pass
-                    for i, row in enumerate(self.image):
-                        for j, value in enumerate(row):
-                            self.write_color(i, j, value)
-                    self.screen.refresh()
+                    if self.gui:
+                        self.screen.clear()
+                        self.screen.addstr(0, 0, f"Cycle: {self.cycle}")
+                        tis = self.__repr__().split('\n')
+                        for i, line in enumerate(tis):
+                            try:
+                                self.screen.addstr(i+1, 0, line)
+                            except:
+                                pass
+                        if (self.image):
+                            for i, row in enumerate(self.image):
+                                for j, value in enumerate(row):
+                                    self.write_color(i, j, value)
+                        self.screen.refresh()
                     self.run_once()
                     cycles = []
                     for row in self.nodes[1:-1]:
                         for n in row:
                             cycles.append(n.cycle)
                     if old_cycles == cycles and self.cycle > 1:
-                        if self.go:
+                        if self.go and not self.frozen:
                             self.cycle -= 1
                         self.go = False
-                    if self.speed == 0:
+                        self.frozen = True
+                        if not self.gui:
+                            output_return = ""
+                            for x, y in self.outputs:
+                                output_list = [str(x) for x in self.output_lists[(x, y)]]
+                                output_return += f"{' '.join(output_list)}" + "\n"
+                            output_return += f"Completed in {self.cycle} cycles."
+                            print(output_return)
+                            return
+                    if self.speed == 0 and self.gui:
                         self.screen.getch()
-                    else:
+                    elif self.gui:  # If we're not in a GUI, don't bother slowing anything down
                         delta, last = (datetime.now() - last), datetime.now()
                         delta = delta.seconds + delta.microseconds/1000000
                         time.sleep(max((1 / self.speed) - delta, 1 / self.speed))
                 except KeyboardInterrupt:
+                    if not self.gui:
+                        output_return = ""
+                        for x, y in self.outputs:
+                            output_list = [str(x) for x in self.output_lists[(x, y)]]
+                            output_return += f"{' '.join(output_list)}" + "\n"
+                        output_return += f"Completed in {self.cycle} cycles."
+                        print(output_return)
+                        return
                     break
         finally:
-            self.screen.keypad(0)
-            curses.flushinp()
-            curses.echo()
-            curses.nocbreak()
-            curses.endwin()
-            curses.curs_set(1);
+            if self.gui:
+                self.screen.keypad(0)
+                curses.flushinp()
+                curses.echo()
+                curses.nocbreak()
+                curses.endwin()
+                curses.curs_set(1);
             self.cycle = 0
             self.go = True
             for (x, y) in self.outputs:
@@ -252,26 +278,41 @@ class NodeCluster:
             if self.image_port:
                 self.image = [[0] * self.image_dim[0] for _ in range(self.image_dim[1])]
 
+    def check_tests(self):
+        # Check if the outputs are the same as the test outputs
+        if sum([len(x) for x in self.test_outputs]) == 0 and len(self.test_image) == 0:
+            return False
+        for n in self.test_outputs:
+            if self.test_outputs[n] != self.output_lists.get(n, None):
+                return False
+        if self.test_image != self.image and self.image_port:
+            return False
+        return True
+
     def run_once(self):
         # Check if test_outputs is equal to output_lists and stop
-        if self.test_outputs == self.output_lists:
+        if self.check_tests():
+            if self.gui:
+                self.screen.addstr(0, 36, "PASS")
+                self.screen.refresh()
+            else:
+                print("Test passed.")
             self.go = False
-        if self.image == self.test_image:
-            self.go = False
-        if not self.go and self.speed > 0:
+            self.frozen = True
+            return
+        if not self.go and self.speed > 0 and self.gui:
             char = self.screen.getch()
             if char == ord('r'):
                 self.go = True
-            else:
-                self.cycle -= 1
-        self.cycle += 1
+        if not self.frozen:
+            self.cycle += 1
         # Execute instructions
         for row in self.nodes:
             for n in row:
-                if self.speed > 0 and len(n.instructions) > 0 and (n.step % len(n.instructions)) in n.breakpoints:
+                if self.speed > 0 and len(n.instructions) > 0 and (n.step % len(n.instructions)) in n.breakpoints and self.gui:
                     self.go = False
                     char = self.screen.getch()
-                    if char == ord('r'):
+                    if char == ord('r') and not self.frozen:
                         self.go = True
                 n.exe()
                 # If this is an output node, check the ACC, add it to the
