@@ -1,4 +1,6 @@
 import re
+import sys
+import time
 
 MAX_N = 999
 MIN_N = -999
@@ -152,7 +154,9 @@ class Node:
                     if value is not None:
                         return value
             return value
-            raise Exception(f"Node {self.x}, {self.y}, step {self.step}: Invalid argument \"{value}\"")
+            print(f"\033[31mNode {self.get_id()},", end=" ")
+            print(f"step {self.step}: Invalid argument \"{value}\"\033[0m")
+            sys.exit()
 
     # TIS-100 OPCODES
     # Operations will return True if they are able to execute and False if they
@@ -163,6 +167,16 @@ class Node:
         self.mode = 'RUN'
         self.step += 1
         self.cycle += 1
+
+    def get_id(self):
+        id = -1
+        for x in range(1, self.y + 1):
+            for y in range(1, self.x + 1):
+                node = self.cluster.nodes[y][x]
+                if not (node.memory or node.dead):
+                    id += 1
+        return id
+
 
     def mov(self, src, dest):
         # MOV - Move a value
@@ -241,7 +255,9 @@ class Node:
         # Set step to the label value.
         self.mode = 'RUN'
         if label not in labels:
-            raise Exception(f"Node {self.x}, {self.y}, step {self.step}: Undefined label: \"{label}\"")
+            print(f"\033[31mNode {self.get_id()}, step {self.step}: Undefined label: \"{label}\"\033[0m")
+            time.sleep(3)
+            sys.exit()
         self.step = labels[label]
         self.cycle += 1
 
@@ -251,7 +267,9 @@ class Node:
         self.cycle += 1
         if self.acc == 0:
             if label not in labels:
-                raise Exception(f"Node {self.x}, {self.y}, step {self.step}: Undefined label: \"{label}\"")
+                print(f"\033[31mNode {self.get_id()}, step {self.step}: Undefined label: \"{label}\"\033[0m")
+                time.sleep(3)
+                sys.exit()
             self.step = labels[label]
         else:
             self.step += 1
@@ -262,7 +280,9 @@ class Node:
         self.cycle += 1
         if self.acc != 0:
             if label not in labels:
-                raise Exception(f"Node {self.x}, {self.y}, step {self.step}: Undefined label: \"{label}\"")
+                print(f"\033[31mNode {self.get_id()}, step {self.step}: Undefined label: \"{label}\"\033[0m")
+                time.sleep(3)
+                sys.exit()
             self.step = labels[label]
         else:
             self.step += 1
@@ -273,7 +293,9 @@ class Node:
         self.cycle += 1
         if self.acc > 0:
             if label not in labels:
-                raise Exception(f"Node {self.x}, {self.y}, step {self.step}: Undefined label: \"{label}\"")
+                print(f"\033[31mNode {self.get_id()}, step {self.step}: Undefined label: \"{label}\"\033[0m")
+                time.sleep(3)
+                sys.exit()
             self.step = labels[label]
         else:
             self.step += 1
@@ -284,7 +306,9 @@ class Node:
         self.cycle += 1
         if self.acc < 0:
             if label not in labels:
-                raise Exception(f"Node {self.x}, {self.y}, step {self.step}: Undefined label: \"{label}\"")
+                print(f"\033[31mNode {self.get_id()}, step {self.step}: Undefined label: \"{label}\"\033[0m")
+                time.sleep(3)
+                sys.exit()
             self.step = labels[label]
         else:
             self.step += 1
@@ -383,5 +407,6 @@ class Node:
             elif line[0] == 'HCF':
                 instructions.append(self.hcf)
             else:
-                raise Exception(f"Node {self.x}, {self.y}: Unknown command: {line[0]} in {' '.join(line)}")
+                print(f"\033[31mNode {self.get_id()}: Unknown command: {line[0]} in {' '.join(line)}\033[0m")
+                sys.exit()
         self.instructions = instructions

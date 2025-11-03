@@ -147,9 +147,9 @@ class NodeCluster:
     def write_color(self, y, x, color):
         width = len(self.nodes[1][1].__repr__().split('\n')[0])
         width *= self.width
-        curses.init_pair(1, 0, 0)
-        curses.init_pair(2, 7, 0)
-        curses.init_pair(3, -1, -1)
+        curses.init_pair(1, -1, 0)
+        curses.init_pair(2, -1, 4)  # Using blue instead of light gray
+        curses.init_pair(3, -1, 7)
         curses.init_pair(4, 0, 1)
         try:
             if color == 0:
@@ -159,10 +159,10 @@ class NodeCluster:
                 self.screen.addstr(y, width+x, " ", curses.color_pair(1))
                 return
             if color == 2:
-                self.screen.addstr(y, width+x, " ", curses.color_pair(2) | curses.A_REVERSE)
+                self.screen.addstr(y, width+x, " ", curses.color_pair(2))
                 return
             if color == 3:
-                self.screen.addstr(y, width+x, " ", curses.color_pair(3) | curses.A_REVERSE)
+                self.screen.addstr(y, width+x, " ", curses.color_pair(3))
                 return
             if color == 4:
                 self.screen.addstr(y, width+x, " ", curses.color_pair(4))

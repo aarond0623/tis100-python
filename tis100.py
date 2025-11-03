@@ -52,7 +52,7 @@ if __name__ == '__main__':
             args.width = int(size[0])
             args.height = int(size[1])
         except IndexError:
-            print("Invalid size definition in layout file.")
+            print("\033[31mInvalid size definition in layout file.\033[0m")
             sys.exit()
         args.input = []
         args.output = []
@@ -61,6 +61,19 @@ if __name__ == '__main__':
         args.dead = []
         i = 0
         for line in lines[1:args.height+1]:
+            line = line.upper()
+            if not all(ch in "CMD" for ch in line):
+                print("\033[31mMalformed layout string.")
+                print("Layout must be come immediately after the size.")
+                print(f"Layout must be exactly {args.width} characters wide and {args.height} characters tall.")
+                print("Layouts consist of only the letters C, M, or D.\033[0m")
+                sys.exit()
+            if len(line) != args.width:
+                print("\033[31mMalformed layout string.")
+                print("Layout must be come immediately after the size.")
+                print(f"Layout must be exactly {args.width} characters wide and {args.height} characters tall.")
+                print("Layouts consist of only the letters C, M, or D.\033[0m")
+                sys.exit()
             for c in line.ljust(args.width, 'C'):
                 if c.upper() == 'M':
                     args.memory.append(i)
@@ -120,12 +133,14 @@ if __name__ == '__main__':
         y = node // args.width + 1
         if y == 1:
             y = 0
-        elif y == args.height:
-            y = args.height + 1
         elif x == 1:
             x = 0
+        elif y == args.height:
+            y = args.height + 1
         elif x == args.width:
             x = args.width + 1
+        else:
+            print("Invalid input node.")
         try:
             c.inputs[(x, y)] = [int(x) for x in re.findall(r'-?\d+', data[i])]
         except:
@@ -138,14 +153,16 @@ if __name__ == '__main__':
     for i, node in enumerate(sorted(args.output)):
         x = node % args.width + 1
         y = node // args.width + 1
-        if y == 1:
-            y = 0
-        elif y == args.height:
+        if y == args.height:
             y = args.height + 1
-        elif x == 1:
-            x = 0
         elif x == args.width:
             x = args.width + 1
+        elif y == 1:
+            y = 0
+        elif x == 1:
+            x = 0
+        else:
+            print("Invalid output node.")
         c.outputs.append((x, y))
         try:
             c.test_outputs[(x, y)] = [int(x) for x in re.findall(r'-?\d+', test[i])]
@@ -156,17 +173,19 @@ if __name__ == '__main__':
         c.nodes[y][x].acc = None
         c.output_lists[(x, y)] = []
 
-    if args.output_image:
+    if args.output_image is not None:
         x = args.output_image % args.width + 1
         y = args.output_image // args.width + 1
-        if y == 1:
-            y = 0
-        elif y == args.height:
+        if y == args.height:
             y = args.height + 1
-        elif x == 1:
-            x = 0
         elif x == args.width:
             x = args.width + 1
+        elif y == 1:
+            y = 0
+        elif x == 1:
+            x = 0
+        else:
+            print("Invalid output node.")
         c.outputs.append((x, y))
         c.nodes[y][x].code = c.create_output(x, y)
         c.nodes[y][x].parse_code()
