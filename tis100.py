@@ -9,33 +9,33 @@ import cluster
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='TIS-100 Emulator', add_help=False)
     parser.add_argument('-s', '--speed', type=int,
-        help="Clock speed in Hz (default 50).", default=50)
+        help="The speed of the emulation in Hz. Defaults to 50. This only takes effect when used with --gui. When the program is run without --gui, the program runs as fast as possible.", default=50)
     parser.add_argument('-w', '--width', type=int,
-        help="Width of the node cluster (default 4).", default=4)
+        help="The width of the emulation. Defaults to 4.", default=4)
     parser.add_argument('-h', '--height', type=int,
-        help="Height of the node cluster (default 3).", default=3)
+        help="The height of the emulation. Defaults to 3.", default=3)
     parser.add_argument('-l', '--layout', type=argparse.FileType('r'),
-        help="File with layout data. If this option is specified, all other layout options are ignored.")
+        help="A file with layout data. If this option is specified, all other options aside from --speed and --gui are ignored.")
     parser.add_argument('-i', '--input', type=int, action='append', default=[],
-        help="Node index that has an input connected to it. Nodes must be on the cluster boundary. This argument can be used multiple times.")
+        help="A node index that has an input connected to it. The node must be on the boundary, and inputs are placed above, to the left, below, and to the right, in that order of precedence. This argument can be used multiple times to define multiple inputs.")
     parser.add_argument('--data', type=argparse.FileType('r'), default=(None if sys.stdin.isatty() else sys.stdin),
-        help="File with input data. Data is read one input per line. Defaults to stdin.")
+        help="A file with input data. Data is read one input per line. Defaults to stdin.")
     parser.add_argument('-o', '--output', type=int, action='append', default=[],
-        help="Node index that has an output connected to it. Nodes must be on the cluster boundary. This argument can be used multiple times.")
+        help="A node index that has an output connected to it. The node must be on the boundary, and outputs are placed below, to the right, above, and to the left, in that order of precedence. This argument can be used multiple times to define multiple outputs. Note that this index differs from the number used in the layout file; an output below node 8 on a 4x3 emulator would use -o 8, but in the layout file, this would be O0.")
     parser.add_argument('--output_image', type=int,
-        help="Node index to be treated as an image output. Only one image output is supported.")
+        help="A node index that has an image output connected to it. Works the same as the --output argument, but there can only be one image output. Images are 30x18 in size.")
     parser.add_argument('--test_data', type=argparse.FileType('r'),
-        help="File with test data to compare outputs against.")
+        help="A file with test output data, one output per line, to compare the outputs against.")
     parser.add_argument('--test_image', type=argparse.FileType('r'),
-        help="File with image test data to compare image output against.")
+        help="A file with image test data to compare the output image against.")
     parser.add_argument('-m', '--memory', type=int, action='append', default=[],
-        help="Node index that is a stack memory node. This argument can be used multiple times.")
+        help="A node index that is a stack memory node. This argument can be used multiple times to define multiple memory nodes.")
     parser.add_argument('-d', '--dead', type=int, action='append', default=[],
-        help="Node index of a dead node. This argument can be used multiple times.")
+        help="A node index that is a dead node. This argument can be used multiple times to define multiple dead nodes.")
     parser.add_argument('-g', '--gui', action='store_true',
-        help="Use this flag to display the graphical interface.")
+        help="Shows the graphical interface when running.")
     parser.add_argument('file', type=str,
-        help="Name of file to load as a program.")
+        help="A file to load as a program.")
     parser.add_argument('--help', action='help',
         help='Show this help message and exit.')
 
@@ -47,12 +47,14 @@ if __name__ == '__main__':
 
     if args.layout:
         lines = args.layout.read().splitlines()
-        size = re.findall(r'\d+', lines[0])
         try:
+            size = re.findall(r'\d+', lines[0])
             args.width = int(size[0])
             args.height = int(size[1])
         except IndexError:
-            print("\033[31mInvalid size definition in layout file.\033[0m")
+            print("\033[31mInvalid size definition in layout file.")
+            print("The first line of the layout file must define the node cluster size.")
+            print("Size is defined with integer values as WIDTH HEIGHT.\033[0m")
             sys.exit()
         args.input = []
         args.output = []

@@ -113,6 +113,11 @@ class Node:
             # When reading from ANY, this is the precedence for ports.
             if src == 'ANY':
                 src = ('LEFT', 'RIGHT', 'UP', 'DOWN')
+            elif src not in ('LEFT', 'RIGHT', 'UP', 'DOWN'):
+                print(f"\033[31mNode {self.get_id()},", end=" ")
+                print(f"step {self.step}: \"{src}\" is not a valid source port.\033[0m")
+                time.sleep(3)
+                sys.exit()
             else:
                 src = (src, )
             dirs = {
@@ -212,6 +217,11 @@ class Node:
             self.output = src
             self.cycle += 1
             return
+        else:
+            print(f"\033[31mNode {self.get_id()},", end=" ")
+            print(f"step {self.step}: \"{dest}\" is not a valid destination port.\033[0m")
+            time.sleep(3)
+            sys.exit()
 
 
     def swp(self):

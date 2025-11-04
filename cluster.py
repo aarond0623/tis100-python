@@ -1,6 +1,7 @@
 import node
 import curses
 from datetime import datetime
+import sys
 import textwrap
 import time
 
@@ -86,11 +87,16 @@ class NodeCluster:
         with open(filename, 'r') as file:
             lines = file.readlines()
             for line in lines:
-                if line[0] == '@':
-                    current_node = int(line[1:])
-                    code[current_node] = ""
-                elif line != "":
-                    code[current_node] += line
+                try:
+                    if line[0] == '@':
+                        current_node = int(line[1:])
+                        code[current_node] = ""
+                    elif line != "":
+                        code[current_node] += line
+                except UnboundLocalError:
+                    print("\033[31mMalformed program file.")
+                    print("Program must have at least one node, labeled @n, where n is the node ID.\033[0m")
+                    sys.exit()
         i = 0
         for y in range(1, self.height+1):
             for x in range(1, self.width+1):
@@ -238,7 +244,7 @@ class NodeCluster:
                             for x, y in self.outputs:
                                 output_list = [str(x) for x in self.output_lists[(x, y)]]
                                 output_return += f"{' '.join(output_list)}" + "\n"
-                            output_return += f"Completed in {self.cycle} cycles."
+                            output_return += f"Completed in {self.cycle} cycle(s)."
                             print(output_return)
                             return
                     if self.speed == 0 and self.gui:
@@ -253,7 +259,7 @@ class NodeCluster:
                         for x, y in self.outputs:
                             output_list = [str(x) for x in self.output_lists[(x, y)]]
                             output_return += f"{' '.join(output_list)}" + "\n"
-                        output_return += f"Completed in {self.cycle} cycles."
+                        output_return += f"Completed in {self.cycle} cycle(s)."
                         print(output_return)
                         return
                     break
