@@ -205,6 +205,7 @@ class NodeCluster:
                 self.screen.keypad(1)
                 curses.curs_set(0);
             last = datetime.now()
+            last_refresh = datetime.now()
             while(True):
                 try:
                     if self.frozen:
@@ -228,7 +229,11 @@ class NodeCluster:
                             for i, row in enumerate(self.image):
                                 for j, value in enumerate(row):
                                     self.write_color(i, j, value)
-                        self.screen.refresh()
+                        delta_refresh= datetime.now() - last_refresh
+                        delta_refresh = delta_refresh.seconds * 1e6 + delta_refresh.microseconds
+                        if delta_refresh > (1e6/60):  # Limit refresh rate to 60 Hz to reduce screen flicker
+                            last_refresh = datetime.now()
+                            self.screen.refresh()
                     self.run_once()
                     cycles = []
                     for row in self.nodes[1:-1]:
@@ -251,7 +256,7 @@ class NodeCluster:
                         self.screen.getch()
                     elif self.gui:  # If we're not in a GUI, don't bother slowing anything down
                         delta, last = (datetime.now() - last), datetime.now()
-                        delta = delta.seconds + delta.microseconds/1000000
+                        delta = delta.seconds + delta.microseconds/1e6
                         time.sleep(max((1 / self.speed) - delta, 1 / self.speed))
                 except KeyboardInterrupt:
                     if not self.gui:
