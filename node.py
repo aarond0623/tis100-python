@@ -203,6 +203,7 @@ class Node:
             self.mode = 'RUN'
             self.step += 1
             self.cycle += 1
+            return
         # Attempting to send to LAST when it is not set will cause a hang.
         if dest == 'LAST':
             if self.last is None:
